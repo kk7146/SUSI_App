@@ -2,8 +2,8 @@
 #include <wx/spinctrl.h>
 #include <cstdint>
 #include <string>
+#include <Susi4.h>
 
-#include "Susi4.h"
 #include "main_frame.h"
 
 static inline wxString Hex32(uint32_t v) {

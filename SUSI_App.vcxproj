@@ -249,8 +249,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExecutablePath>C:\wxWidgets-3.2.8\include;C:\wxWidgets-3.2.8\include\msvc;$(ExecutablePath)</ExecutablePath>
-    <LibraryPath>C:\wxWidgets-3.2.8\lib\vc_x64_lib;C:\SUSI4\lib\x64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>C:\wxWidgets-3.2.8\include;C:\wxWidgets-3.2.8\include\msvc;C:\Program Files\Advantech\SUSI\SDK\SUSI4\include;$(ExecutablePath)</ExecutablePath>
+    <LibraryPath>C:\wxWidgets-3.2.8\lib\vc_x64_lib;C:\Program Files\Advantech\SUSI\SDK\SUSI4\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -442,7 +442,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\wxWidgets-3.2.8\include;C:\wxWidgets-3.2.8\include\msvc;$(ProjectDir)\includes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\wxWidgets-3.2.8\include;C:\wxWidgets-3.2.8\include\msvc;$(ProjectDir)\includes;C:\Program Files\Advantech\SUSI\SDK\SUSI4\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
