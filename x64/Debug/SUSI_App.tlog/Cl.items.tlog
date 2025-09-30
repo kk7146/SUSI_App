@@ -1,2 +1,5 @@
-C:\Users\advantech\source\repos\Term\SUSI_App\srcs\app.cpp;C:\Users\advantech\source\repos\Term\SUSI_App\x64\Debug\app.obj
-C:\Users\advantech\source\repos\Term\SUSI_App\srcs\main_frame.cpp;C:\Users\advantech\source\repos\Term\SUSI_App\x64\Debug\main_frame.obj
+C:\Users\Kai.Son\source\repos\SUSI_App\srcs\app.cpp;C:\Users\Kai.Son\source\repos\SUSI_App\x64\Debug\app.obj
+C:\Users\Kai.Son\source\repos\SUSI_App\srcs\control_page.cpp;C:\Users\Kai.Son\source\repos\SUSI_App\x64\Debug\control_page.obj
+C:\Users\Kai.Son\source\repos\SUSI_App\srcs\util.cpp;C:\Users\Kai.Son\source\repos\SUSI_App\x64\Debug\util.obj
+C:\Users\Kai.Son\source\repos\SUSI_App\srcs\gpio_page.cpp;C:\Users\Kai.Son\source\repos\SUSI_App\x64\Debug\gpio_page.obj
+C:\Users\Kai.Son\source\repos\SUSI_App\srcs\main_frame.cpp;C:\Users\Kai.Son\source\repos\SUSI_App\x64\Debug\main_frame.obj

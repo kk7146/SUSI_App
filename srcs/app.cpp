@@ -1,23 +1,15 @@
-#include <wx/wx.h>
+#include <wx/sizer.h>
+#include <wx/stattext.h>
+#include <wx/toolbar.h>
 
 #include "app.h"
 #include "main_frame.h"
-#include <Susi4.h>
 
-wxIMPLEMENT_APP(MyApp);
+wxIMPLEMENT_APP(MainApp);
 
-bool MyApp::OnInit() {
-    uint32_t st = SusiLibInitialize();
-    if (st != SUSI_STATUS_SUCCESS) {
-        wxMessageBox(wxString::Format("SusiLibInitialize() failed: %08X", st),
-            "SUSI init error", wxOK | wxICON_ERROR);
-        return false;
-    }
-    auto* f = new MainFrame(nullptr);
-    f->Show();
+bool MainApp::OnInit() {
+    if (!wxApp::OnInit()) return false;
+    auto* frame = new MainFrame();
+    frame->Show(true);
     return true;
-}
-int MyApp::OnExit() {
-    SusiLibUninitialize();
-    return wxApp::OnExit();
 }

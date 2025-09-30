@@ -1,7 +1,32 @@
-﻿  main_frame.cpp
+﻿  gpio_page.cpp
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x399 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/gpio_page.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x39a 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/gpio_page.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x3a0 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/gpio_page.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x3a1 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/gpio_page.cpp'을(를) 컴파일하는 중)
+  
+  main_frame.cpp
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x399 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/main_frame.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x39a 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/main_frame.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x3a0 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/main_frame.cpp'을(를) 컴파일하는 중)
+  
+C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: 파일에 0x3a1 오프셋에서 시작하는 문자가 포함되어 있습니다. 이 문자는 현재 원본 문자 집합에서 잘못된 문자입니다(코드 페이지 65001).
+  (소스 파일 'srcs/main_frame.cpp'을(를) 컴파일하는 중)
+  
   코드를 생성하고 있습니다.
-  0 of 567 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  165 of 1313 functions (12.6%) were compiled, the rest were copied from previous compilation.
+    125 functions were new in current compilation
+    110 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
-  SUSI_App.vcxproj -> C:\Users\advantech\source\repos\Term\x64\Debug\SUSI_App.exe
+  SUSI_App.vcxproj -> C:\Users\Kai.Son\source\repos\Serial_Port_Term\x64\Debug\SUSI_App.exe

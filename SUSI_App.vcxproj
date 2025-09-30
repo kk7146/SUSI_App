@@ -68,10 +68,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\app.h" />
+    <ClInclude Include="includes\control_page.h" />
+    <ClInclude Include="includes\util.h" />
+    <ClInclude Include="includes\gpio_page.h" />
     <ClInclude Include="includes\main_frame.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="srcs\app.cpp" />
+    <ClCompile Include="srcs\control_page.cpp" />
+    <ClCompile Include="srcs\util.cpp" />
+    <ClCompile Include="srcs\gpio_page.cpp" />
     <ClCompile Include="srcs\main_frame.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -444,6 +450,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\wxWidgets-3.2.8\include;C:\wxWidgets-3.2.8\include\msvc;$(ProjectDir)\includes;C:\Program Files\Advantech\SUSI\SDK\SUSI4\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

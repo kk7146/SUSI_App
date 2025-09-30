@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="소스 파일\util">
+      <UniqueIdentifier>{34aa331c-fc7f-4ea6-a2bd-0e8836b3b886}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\util">
+      <UniqueIdentifier>{346b2ed1-72b1-470a-84f0-9442f86fb88f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\app.h">
@@ -21,6 +27,15 @@
     <ClInclude Include="includes\main_frame.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="includes\control_page.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\gpio_page.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\util.h">
+      <Filter>헤더 파일\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="srcs\app.cpp">
@@ -28,6 +43,15 @@
     </ClCompile>
     <ClCompile Include="srcs\main_frame.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="srcs\control_page.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="srcs\gpio_page.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="srcs\util.cpp">
+      <Filter>소스 파일\util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
