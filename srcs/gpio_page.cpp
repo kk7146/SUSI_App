@@ -1,144 +1,280 @@
-﻿#include <wx/wx.h>
-#include "gpio_page.h"
+﻿#include "gpio_page.h"
 #include "util.h"
 
-static inline wxString Hex32(uint32_t v) {
-    return wxString::Format("0x%08X", v);
+using namespace SUSI::GPIO;
+
+namespace {
+    constexpr std::uint32_t PINS_PER_BANK_V = PINS_PER_BANK;
 }
 
-GpioPage::GpioPage(wxWindow* parent, GPIO::Bank bank)
-    : ControlPage(parent, "GPIO", "GPIO Control",
-        "control page")
+GpioPage::GpioPage(wxWindow* parent,
+    Bank bank,
+    const wxString& key,
+    const wxString& title,
+    const wxString& desc)
+    : ControlPage(parent, key, title, desc)
 {
-    bank_ = bank;
-    BuildUI_();
+    currentBankIndex_ = bank.index;
+    BuildUI();
+    PopulateGridForCurrentBank();
 }
 
-void GpioPage::BuildUI_() {
-    auto* vbox = contentSizer_;
-    auto* panel = content_;
+void GpioPage::SetBank(Bank bank)
+{
+    if (!bank.valid()) {
+        wxMessageBox("Invalid bank.", "GPIO", wxOK | wxICON_WARNING, this);
+        return;
+    }
+    currentBankIndex_ = bank.index;
+    if (bankLabel_) {
+        bankLabel_->SetLabel(wxString::Format("Bank %u", currentBankIndex_));
+        bankLabel_->Wrap(-1);
+    }
+    PopulateGridForCurrentBank();
+}
 
+void GpioPage::BuildUI()
+{
+    auto* root = new wxBoxSizer(wxVERTICAL);
+
+  
     {
-        auto* row = new wxBoxSizer(wxHORIZONTAL);
+        auto* top = new wxBoxSizer(wxHORIZONTAL);
 
-        lblBank_ = new wxStaticText(panel, wxID_ANY, "Bank ?");
-        lblBank_->SetFont(lblBank_->GetFont().Bold());
-        row->Add(lblBank_, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+        bankLabel_ = new wxStaticText(content_, wxID_ANY,
+            wxString::Format("Bank %u", currentBankIndex_));
+        bankLabel_->SetFont(bankLabel_->GetFont().Bold());
+        top->Add(bankLabel_, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
 
-        chkAuto_ = new wxCheckBox(panel, wxID_ANY, "Auto-Refresh");
-        chkAuto_->SetValue(true);
-        row->Add(chkAuto_, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+        btnRefresh_ = new wxButton(content_, wxID_ANY, "Refresh");
+        btnRefresh_->Bind(wxEVT_BUTTON, &GpioPage::OnRefresh, this);
+        top->Add(btnRefresh_, 0);
 
-        btnRefresh_ = new wxButton(panel, wxID_ANY, "Refresh");
-        row->Add(btnRefresh_, 0, wxALIGN_CENTER_VERTICAL);
-
-        vbox->Add(row, 0, wxEXPAND | wxBOTTOM, 6);
+        root->Add(top, 0, wxBOTTOM, 6);
     }
 
+  
     {
-        auto* g = new wxFlexGridSizer(2, 4, 4, 12);
-        g->AddGrowableCol(0);
-        g->AddGrowableCol(1);
-        g->AddGrowableCol(2);
-        g->AddGrowableCol(3);
+        grid_ = new wxDataViewListCtrl(content_, wxID_ANY,
+            wxDefaultPosition, wxDefaultSize,
+            wxDV_ROW_LINES | wxDV_VERT_RULES | wxDV_MULTIPLE);
 
-        lblSupIn_ = new wxStaticText(panel, wxID_ANY, "IN : -");
-        lblSupOut_ = new wxStaticText(panel, wxID_ANY, "OUT: -");
-        lblDir_ = new wxStaticText(panel, wxID_ANY, "DIR: -");
-        lblVal_ = new wxStaticText(panel, wxID_ANY, "VAL: -");
+        grid_->AppendTextColumn("Bit", wxDATAVIEW_CELL_INERT, 60, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
+        grid_->AppendTextColumn("Abs", wxDATAVIEW_CELL_INERT, 90, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
+        grid_->AppendTextColumn("Direction", wxDATAVIEW_CELL_INERT, 110, wxALIGN_LEFT);
+        grid_->AppendTextColumn("Level", wxDATAVIEW_CELL_INERT, 80, wxALIGN_LEFT);
 
-        g->Add(new wxStaticText(panel, wxID_ANY, "Support (Input) :"));
-        g->Add(lblSupIn_, 0, wxEXPAND);
-        g->Add(new wxStaticText(panel, wxID_ANY, "Support (Output):"));
-        g->Add(lblSupOut_, 0, wxEXPAND);
-        g->Add(new wxStaticText(panel, wxID_ANY, "Direction (1=Out):"));
-        g->Add(lblDir_, 0, wxEXPAND);
-        g->Add(new wxStaticText(panel, wxID_ANY, "Value (1=High)  :"));
-        g->Add(lblVal_, 0, wxEXPAND);
-
-        vbox->Add(g, 0, wxEXPAND | wxBOTTOM, 8);
+        root->Add(grid_, 1, wxEXPAND | wxBOTTOM, 6);
     }
 
+  
     {
-        auto* hdr = new wxFlexGridSizer(1, 3, 0, 12);
-        hdr->Add(new wxStaticText(panel, wxID_ANY, "Pin"));
-        hdr->Add(new wxStaticText(panel, wxID_ANY, "Direction (Output)"));
-        hdr->Add(new wxStaticText(panel, wxID_ANY, "Value"));
-        vbox->Add(hdr, 0, wxBOTTOM, 2);
+        auto* bottom = new wxBoxSizer(wxHORIZONTAL);
+        btnSetIn_ = new wxButton(content_, wxID_ANY, "Set In");
+        btnSetOut_ = new wxButton(content_, wxID_ANY, "Set Out");
+        btnWriteLow_ = new wxButton(content_, wxID_ANY, "Write Low");
+        btnWriteHigh_ = new wxButton(content_, wxID_ANY, "Write High");
+        btnRefreshSelected_ = new wxButton(content_, wxID_ANY, "Refresh Selected");
+
+        bottom->Add(btnSetIn_, 0, wxRIGHT, 4);
+        bottom->Add(btnSetOut_, 0, wxRIGHT, 12);
+        bottom->Add(btnWriteLow_, 0, wxRIGHT, 4);
+        bottom->Add(btnWriteHigh_, 0, wxRIGHT, 12);
+        bottom->AddStretchSpacer(1);
+        bottom->Add(btnRefreshSelected_, 0);
+
+        btnSetIn_->Bind(wxEVT_BUTTON, &GpioPage::OnSetIn, this);
+        btnSetOut_->Bind(wxEVT_BUTTON, &GpioPage::OnSetOut, this);
+        btnWriteLow_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteLow, this);
+        btnWriteHigh_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteHigh, this);
+        btnRefreshSelected_->Bind(wxEVT_BUTTON, &GpioPage::OnRefreshSelected, this);
+
+        root->Add(bottom, 0);
     }
 
-    grid_ = new wxFlexGridSizer(32, 3, 4, 12);
-    grid_->AddGrowableCol(2);
+    content_->SetSizer(root);
+}
 
-    for (int bit = 0; bit < 32; ++bit) {
-        pinLabel_[bit] = new wxStaticText(panel, wxID_ANY, wxString::Format("%2d", bit));
-        dirOut_[bit] = new wxCheckBox(panel, wxID_ANY, "");
-        valBtn_[bit] = new wxToggleButton(panel, wxID_ANY, "LOW");
-        dirOut_[bit]->Bind(wxEVT_CHECKBOX, [this, bit](wxCommandEvent&) { OnToggleDir_(bit); });
-        valBtn_[bit]->Bind(wxEVT_TOGGLEBUTTON, [this, bit](wxCommandEvent&) { OnToggleVal_(bit); });
+void GpioPage::PopulateGridForCurrentBank()
+{
+    grid_->DeleteAllItems();
 
-        grid_->Add(pinLabel_[bit], 0, wxALIGN_CENTER_VERTICAL);
-        grid_->Add(dirOut_[bit], 0, wxALIGN_CENTER_VERTICAL);
-        grid_->Add(valBtn_[bit], 0, wxEXPAND);
-    }
-    vbox->Add(grid_, 0, wxEXPAND | wxBOTTOM, 8);
-
-    {
-        auto* row = new wxBoxSizer(wxHORIZONTAL);
-        btnAllIn_ = new wxButton(panel, wxID_ANY, "All Input");
-        btnAllOut_ = new wxButton(panel, wxID_ANY, "All Output");
-        btnAllLow_ = new wxButton(panel, wxID_ANY, "All Low");
-        btnAllHigh_ = new wxButton(panel, wxID_ANY, "All High");
-
-        row->Add(btnAllIn_, 0, wxRIGHT, 6);
-        row->Add(btnAllOut_, 0, wxRIGHT, 12);
-        row->Add(btnAllLow_, 0, wxRIGHT, 6);
-        row->Add(btnAllHigh_, 0);
-
-        vbox->Add(row, 0, wxALIGN_RIGHT);
+    if (currentBankIndex_ == static_cast<std::uint32_t>(-1)) {
+        return;
     }
 
-    content_->Layout();
+    const std::uint32_t bankIndex = currentBankIndex_;
 
-    chkAuto_->Bind(wxEVT_CHECKBOX, &GpioPage::OnToggleAuto_, this);
-    btnRefresh_->Bind(wxEVT_BUTTON, &GpioPage::OnClickRefresh_, this);
-    btnAllIn_->Bind(wxEVT_BUTTON, &GpioPage::OnAllIn_, this);
-    btnAllOut_->Bind(wxEVT_BUTTON, &GpioPage::OnAllOut_, this);
-    btnAllLow_->Bind(wxEVT_BUTTON, &GpioPage::OnAllLow_, this);
-    btnAllHigh_->Bind(wxEVT_BUTTON, &GpioPage::OnAllHigh_, this);
+    for (std::uint32_t bit = 0; bit < PINS_PER_BANK_V; ++bit) {
+        const std::uint32_t abs = bankIndex * PINS_PER_BANK_V + bit;
+        const Pin pin{ Bank{ bankIndex }, bit };
 
-    pollTimer_.Start(200);
+        Dir d = Dir::Unknown;
+        Level lv = Level::Unknown;
+        (void)GetDir(pin, d);
+        (void)GetLevel(pin, lv);
+
+        wxVector<wxVariant> row;
+        row.push_back(wxVariant(wxString::Format("%u", bit)));
+        row.push_back(wxVariant(wxString::Format("%u", abs)));
+        row.push_back(wxVariant(DirToString(d)));
+        row.push_back(wxVariant(LevelToString(lv)));
+
+        grid_->AppendItem(row);
+    }
 }
 
-void GpioPage::RefreshMasksAndRows_() {
+void GpioPage::RefreshAllRows()
+{
+    const unsigned count = grid_->GetItemCount();
+    for (unsigned r = 0; r < count; ++r) {
+        auto item = grid_->RowToItem(r);
+
+        std::uint32_t abs = 0;
+        if (!GetAbsFromItem(item, abs)) continue;
+
+        const auto bank = abs / PINS_PER_BANK_V;
+        const auto bit = abs % PINS_PER_BANK_V;
+        const Pin pin{ Bank{ bank }, bit };
+
+        Dir d = Dir::Unknown;
+        Level lv = Level::Unknown;
+        (void)GetDir(pin, d);
+        (void)GetLevel(pin, lv);
+
+        grid_->SetValue(wxVariant(DirToString(d)), r, COL_DIR);
+        grid_->SetValue(wxVariant(LevelToString(lv)), r, COL_LEVEL);
+    }
 }
 
-void GpioPage::RefreshRow_(int bit) {
+void GpioPage::RefreshSelectedRows()
+{
+    wxDataViewItemArray sel;
+    grid_->GetSelections(sel);
+    for (auto& item : sel) {
+        int r = grid_->ItemToRow(item);
+        if (r < 0) continue;
+
+        std::uint32_t abs = 0;
+        if (!GetAbsFromItem(item, abs)) continue;
+
+        const auto bank = abs / PINS_PER_BANK_V;
+        const auto bit = abs % PINS_PER_BANK_V;
+        const Pin pin{ Bank{ bank }, bit };
+
+        Dir d = Dir::Unknown;
+        Level lv = Level::Unknown;
+        (void)GetDir(pin, d);
+        (void)GetLevel(pin, lv);
+
+        grid_->SetValue(wxVariant(DirToString(d)), r, COL_DIR);
+        grid_->SetValue(wxVariant(LevelToString(lv)), r, COL_LEVEL);
+    }
 }
 
-void GpioPage::OnToggleAuto_(wxCommandEvent&) {
+void GpioPage::ApplyDir(Dir dir)
+{
+    wxDataViewItemArray sel;
+    grid_->GetSelections(sel);
+    if (sel.empty()) {
+        wxMessageBox("Select one or more pins first.", "No Selection",
+            wxOK | wxICON_INFORMATION, this);
+        return;
+    }
+
+    for (auto& item : sel) {
+        std::uint32_t abs = 0;
+        if (!GetAbsFromItem(item, abs)) continue;
+
+        const auto bank = abs / PINS_PER_BANK_V;
+        const auto bit = abs % PINS_PER_BANK_V;
+        const Pin pin{ Bank{ bank }, bit };
+
+        SusiStatus_t st = SUSI_STATUS_SUCCESS;
+        if (dir == Dir::Input)       st = SetIn(pin);
+        else if (dir == Dir::Output) st = SetOut(pin);
+        else continue;
+
+        ShowIfError(st, dir == Dir::Input ? "SetIn" : "SetOut");
+    }
+    RefreshSelectedRows();
 }
 
-void GpioPage::OnClickRefresh_(wxCommandEvent&) {
+void GpioPage::ApplyWrite(Level level)
+{
+    wxDataViewItemArray sel;
+    grid_->GetSelections(sel);
+    if (sel.empty()) {
+        wxMessageBox("Select one or more pins first.", "No Selection",
+            wxOK | wxICON_INFORMATION, this);
+        return;
+    }
+
+    for (auto& item : sel) {
+        std::uint32_t abs = 0;
+        if (!GetAbsFromItem(item, abs)) continue;
+
+        const auto bank = abs / PINS_PER_BANK_V;
+        const auto bit = abs % PINS_PER_BANK_V;
+        const Pin pin{ Bank{ bank }, bit };
+
+        SusiStatus_t st = SUSI_STATUS_SUCCESS;
+        if (level == Level::Low)       st = WriteLow(pin);
+        else if (level == Level::High) st = WriteHigh(pin);
+        else continue;
+
+        ShowIfError(st, level == Level::Low ? "WriteLow" : "WriteHigh");
+    }
+    RefreshSelectedRows();
 }
 
-void GpioPage::OnToggleDir_(int bit) {
+void GpioPage::OnRefresh(wxCommandEvent&)
+{
+    PopulateGridForCurrentBank();
 }
 
-void GpioPage::OnToggleVal_(int bit) {
+void GpioPage::OnSetIn(wxCommandEvent&) { ApplyDir(Dir::Input); }
+void GpioPage::OnSetOut(wxCommandEvent&) { ApplyDir(Dir::Output); }
+void GpioPage::OnWriteLow(wxCommandEvent&) { ApplyWrite(Level::Low); }
+void GpioPage::OnWriteHigh(wxCommandEvent&) { ApplyWrite(Level::High); }
+void GpioPage::OnRefreshSelected(wxCommandEvent&) { RefreshSelectedRows(); }
+
+wxString GpioPage::DirToString(Dir d)
+{
+    switch (d) {
+    case Dir::Input:  return "Input";
+    case Dir::Output: return "Output";
+    default:          return "Unknown";
+    }
 }
 
-void GpioPage::OnAllIn_(wxCommandEvent&) {
+wxString GpioPage::LevelToString(Level l)
+{
+    switch (l) {
+    case Level::Low:  return "Low";
+    case Level::High: return "High";
+    default:          return "Unknown";
+    }
 }
 
-void GpioPage::OnAllOut_(wxCommandEvent&) {
+void GpioPage::ShowIfError(SusiStatus_t st, const wxString& what)
+{
+    if (st != SUSI_STATUS_SUCCESS) {
+        wxMessageBox(wxString::Format("%s failed (status=%d)", what, static_cast<int>(st)),
+            "SUSI Error", wxOK | wxICON_ERROR);
+    }
 }
 
-void GpioPage::OnAllLow_(wxCommandEvent&) {;
-}
+bool GpioPage::GetAbsFromItem(const wxDataViewItem& item, std::uint32_t& outAbs) const
+{
+    if (!item.IsOk()) return false;
+    int row = grid_->ItemToRow(item);
+    if (row < 0) return false;
 
-void GpioPage::OnAllHigh_(wxCommandEvent&) {
-}
-
-void GpioPage::OnPollTimer_(wxTimerEvent&) {
+    wxVariant v;
+    grid_->GetValue(v, row, COL_ABS);
+    long l = 0;
+    if (!v.GetString().ToLong(&l)) return false;
+    outAbs = static_cast<std::uint32_t>(l);
+    return true;
 }

@@ -1,58 +1,69 @@
-#ifndef GPIO_PAGE_H
-#define GPIO_PAGE_H
+#ifndef GPIO_BANK_PAGE_H
+#define GPIO_BANK_PAGE_H
 
 #include <wx/wx.h>
-#include <wx/tglbtn.h>
-#include <array>
+#include <wx/dataview.h>
+#include <cstdint>
+#include <vector>
 
 #include "control_page.h"
+#include "gpio.h"
 #include "util.h"
 
-using namespace SUSI;
+using namespace SUSI::GPIO;
 
 class GpioPage : public ControlPage {
 public:
-    explicit GpioPage(wxWindow* parent, GPIO::Bank bank);
+    GpioPage(wxWindow* parent,
+        Bank bank,
+        const wxString& key = "gpio.bank",
+        const wxString& title = "GPIO Bank",
+        const wxString& desc = "Control pin direction/level for the specified bank.");
+    ~GpioPage() override = default;
 
-    GPIO::Bank  GetBank() const { return bank_; }
+    void SetBank(Bank bank);
+
 private:
-    GPIO::Bank bank_;
+    std::uint32_t currentBankIndex_{ static_cast<std::uint32_t>(-1) };
 
-    wxStaticText* lblBank_ = nullptr;
-    wxCheckBox* chkAuto_ = nullptr;
+    wxStaticText* bankLabel_ = nullptr;
     wxButton* btnRefresh_ = nullptr;
+    wxDataViewListCtrl* grid_ = nullptr;
 
-    wxStaticText* lblSupIn_ = nullptr;
-    wxStaticText* lblSupOut_ = nullptr;
-    wxStaticText* lblDir_ = nullptr;
-    wxStaticText* lblVal_ = nullptr;
+    wxButton* btnSetIn_ = nullptr;
+    wxButton* btnSetOut_ = nullptr;
+    wxButton* btnWriteLow_ = nullptr;
+    wxButton* btnWriteHigh_ = nullptr;
+    wxButton* btnRefreshSelected_ = nullptr;
 
-    wxFlexGridSizer* grid_ = nullptr;
-    std::array<wxStaticText*, 32> pinLabel_{};
-    std::array<wxCheckBox*, 32> dirOut_{};
-    std::array<wxToggleButton*, 32> valBtn_{};
+    void BuildUI();
+    void PopulateGridForCurrentBank();
 
-    wxButton* btnAllIn_ = nullptr;
-    wxButton* btnAllOut_ = nullptr;
-    wxButton* btnAllLow_ = nullptr;
-    wxButton* btnAllHigh_ = nullptr;
+    void RefreshAllRows();
+    void RefreshSelectedRows();
 
-    wxTimer pollTimer_;
+    void ApplyDir(Dir dir);
+    void ApplyWrite(Level level);
 
-    void BuildUI_();
-    void RebuildPins_();
-    void RefreshMasksAndRows_();
-    void RefreshRow_(int bit);
+    void OnRefresh(wxCommandEvent& e);
+    void OnSetIn(wxCommandEvent& e);
+    void OnSetOut(wxCommandEvent& e);
+    void OnWriteLow(wxCommandEvent& e);
+    void OnWriteHigh(wxCommandEvent& e);
+    void OnRefreshSelected(wxCommandEvent& e);
 
-    void OnToggleAuto_(wxCommandEvent&);
-    void OnClickRefresh_(wxCommandEvent&);
-    void OnToggleDir_(int bit);
-    void OnToggleVal_(int bit);
-    void OnAllIn_(wxCommandEvent&);
-    void OnAllOut_(wxCommandEvent&);
-    void OnAllLow_(wxCommandEvent&);
-    void OnAllHigh_(wxCommandEvent&);
-    void OnPollTimer_(wxTimerEvent&);
+    static wxString DirToString(Dir d);
+    static wxString LevelToString(Level l);
+    static void ShowIfError(SusiStatus_t st, const wxString& what);
+
+    bool GetAbsFromItem(const wxDataViewItem& item, std::uint32_t& outAbs) const;
+
+    enum {
+        COL_BIT = 0,
+        COL_ABS = 1,
+        COL_DIR = 2,
+        COL_LEVEL = 3
+    };
 };
 
 #endif
