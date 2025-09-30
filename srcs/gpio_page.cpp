@@ -19,78 +19,34 @@ GpioPage::GpioPage(wxWindow* parent,
     PopulateGridForCurrentBank();
 }
 
-void GpioPage::SetBank(Bank bank)
-{
-    if (!bank.valid()) {
-        wxMessageBox("Invalid bank.", "GPIO", wxOK | wxICON_WARNING, this);
-        return;
-    }
-    currentBankIndex_ = bank.index;
-    if (bankLabel_) {
-        bankLabel_->SetLabel(wxString::Format("Bank %u", currentBankIndex_));
-        bankLabel_->Wrap(-1);
-    }
-    PopulateGridForCurrentBank();
-}
-
 void GpioPage::BuildUI()
 {
     auto* root = new wxBoxSizer(wxVERTICAL);
+    grid_ = new wxDataViewListCtrl(content_, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxDV_ROW_LINES | wxDV_VERT_RULES | wxDV_MULTIPLE);
+    grid_->AppendTextColumn("Bit", wxDATAVIEW_CELL_INERT, 60, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
+    grid_->AppendTextColumn("Direction", wxDATAVIEW_CELL_INERT, 110, wxALIGN_LEFT);
+    grid_->AppendTextColumn("Level", wxDATAVIEW_CELL_INERT, 80, wxALIGN_LEFT);
+    root->Add(grid_, 1, wxEXPAND | wxBOTTOM, 6);
 
-  
-    {
-        auto* top = new wxBoxSizer(wxHORIZONTAL);
+    auto* bottom = new wxBoxSizer(wxHORIZONTAL);
+    btnSetIn_ = new wxButton(content_, wxID_ANY, "Set In");
+    btnSetOut_ = new wxButton(content_, wxID_ANY, "Set Out");
+    btnWriteLow_ = new wxButton(content_, wxID_ANY, "Write Low");
+    btnWriteHigh_ = new wxButton(content_, wxID_ANY, "Write High");
+    btnRefreshSelected_ = new wxButton(content_, wxID_ANY, "Refresh Selected");
 
-        bankLabel_ = new wxStaticText(content_, wxID_ANY,
-            wxString::Format("Bank %u", currentBankIndex_));
-        bankLabel_->SetFont(bankLabel_->GetFont().Bold());
-        top->Add(bankLabel_, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+    bottom->Add(btnSetIn_, 0, wxRIGHT, 4);
+    bottom->Add(btnSetOut_, 0, wxRIGHT, 12);
+    bottom->Add(btnWriteLow_, 0, wxRIGHT, 4);
+    bottom->Add(btnWriteHigh_, 0, wxRIGHT, 12);
+    bottom->AddStretchSpacer(1);
 
-        btnRefresh_ = new wxButton(content_, wxID_ANY, "Refresh");
-        btnRefresh_->Bind(wxEVT_BUTTON, &GpioPage::OnRefresh, this);
-        top->Add(btnRefresh_, 0);
+    btnSetIn_->Bind(wxEVT_BUTTON, &GpioPage::OnSetIn, this);
+    btnSetOut_->Bind(wxEVT_BUTTON, &GpioPage::OnSetOut, this);
+    btnWriteLow_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteLow, this);
+    btnWriteHigh_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteHigh, this);
 
-        root->Add(top, 0, wxBOTTOM, 6);
-    }
-
-  
-    {
-        grid_ = new wxDataViewListCtrl(content_, wxID_ANY,
-            wxDefaultPosition, wxDefaultSize,
-            wxDV_ROW_LINES | wxDV_VERT_RULES | wxDV_MULTIPLE);
-
-        grid_->AppendTextColumn("Bit", wxDATAVIEW_CELL_INERT, 60, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
-        grid_->AppendTextColumn("Direction", wxDATAVIEW_CELL_INERT, 110, wxALIGN_LEFT);
-        grid_->AppendTextColumn("Level", wxDATAVIEW_CELL_INERT, 80, wxALIGN_LEFT);
-
-        root->Add(grid_, 1, wxEXPAND | wxBOTTOM, 6);
-    }
-
-  
-    {
-        auto* bottom = new wxBoxSizer(wxHORIZONTAL);
-        btnSetIn_ = new wxButton(content_, wxID_ANY, "Set In");
-        btnSetOut_ = new wxButton(content_, wxID_ANY, "Set Out");
-        btnWriteLow_ = new wxButton(content_, wxID_ANY, "Write Low");
-        btnWriteHigh_ = new wxButton(content_, wxID_ANY, "Write High");
-        btnRefreshSelected_ = new wxButton(content_, wxID_ANY, "Refresh Selected");
-
-        bottom->Add(btnSetIn_, 0, wxRIGHT, 4);
-        bottom->Add(btnSetOut_, 0, wxRIGHT, 12);
-        bottom->Add(btnWriteLow_, 0, wxRIGHT, 4);
-        bottom->Add(btnWriteHigh_, 0, wxRIGHT, 12);
-        bottom->AddStretchSpacer(1);
-        bottom->Add(btnRefreshSelected_, 0);
-
-        btnSetIn_->Bind(wxEVT_BUTTON, &GpioPage::OnSetIn, this);
-        btnSetOut_->Bind(wxEVT_BUTTON, &GpioPage::OnSetOut, this);
-        btnWriteLow_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteLow, this);
-        btnWriteHigh_->Bind(wxEVT_BUTTON, &GpioPage::OnWriteHigh, this);
-        btnRefreshSelected_->Bind(wxEVT_BUTTON, &GpioPage::OnRefreshSelected, this);
-
-        root->Add(bottom, 0);
-    }
-
+    root->Add(bottom, 0);
     content_->SetSizer(root);
 }
 
@@ -227,16 +183,10 @@ void GpioPage::ApplyWrite(Level level)
     RefreshSelectedRows();
 }
 
-void GpioPage::OnRefresh(wxCommandEvent&)
-{
-    PopulateGridForCurrentBank();
-}
-
 void GpioPage::OnSetIn(wxCommandEvent&) { ApplyDir(Dir::Input); }
 void GpioPage::OnSetOut(wxCommandEvent&) { ApplyDir(Dir::Output); }
 void GpioPage::OnWriteLow(wxCommandEvent&) { ApplyWrite(Level::Low); }
 void GpioPage::OnWriteHigh(wxCommandEvent&) { ApplyWrite(Level::High); }
-void GpioPage::OnRefreshSelected(wxCommandEvent&) { RefreshSelectedRows(); }
 
 wxString GpioPage::DirToString(Dir d)
 {

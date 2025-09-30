@@ -26,8 +26,6 @@ public:
 private:
     std::uint32_t currentBankIndex_{ static_cast<std::uint32_t>(-1) };
 
-    wxStaticText* bankLabel_ = nullptr;
-    wxButton* btnRefresh_ = nullptr;
     wxDataViewListCtrl* grid_ = nullptr;
 
     wxButton* btnSetIn_ = nullptr;
@@ -50,7 +48,6 @@ private:
     void OnSetOut(wxCommandEvent& e);
     void OnWriteLow(wxCommandEvent& e);
     void OnWriteHigh(wxCommandEvent& e);
-    void OnRefreshSelected(wxCommandEvent& e);
 
     static wxString DirToString(Dir d);
     static wxString LevelToString(Level l);

@@ -152,11 +152,14 @@ void MainFrame::OnTreeActivate(wxTreeEvent& e) {
 
     switch (nd->type) {
     case NodeData::GPIO_BANK: {
-        const wxString key = wxString::Format("gpio:bank:%d", nd->bank.index);
-        const wxString tab = wxString::Format("GPIO %d", nd->bank.index);
-        ShowOrCreatePage(key, tab, [&, bank = nd->bank](wxWindow* parent) {
-            return new GpioPage(parent, bank);
+        ShowOrCreatePage("gpio", "GPIO", [&](wxWindow* parent) {
+            return MakePlaceholderPage("GPIO", "GPIO control page");
             });
+        // const wxString key = wxString::Format("gpio:bank:%d", nd->bank.index);
+        // const wxString tab = wxString::Format("GPIO %d", nd->bank.index);
+        // ShowOrCreatePage(key, tab, [&, bank = nd->bank](wxWindow* parent) {
+        //     return new GpioPage(parent, bank);
+        //     });
         break;
     }
     case NodeData::FAN_ROOT: {
