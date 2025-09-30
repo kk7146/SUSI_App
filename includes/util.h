@@ -61,8 +61,8 @@ namespace SUSI {
             };
         }
 
-        std::vector<Pin>      FindAvailablePins(PinFilter filter = PinFilter::Any);
-        std::vector<Bank>     FindAvailableBanks(PinFilter filter = PinFilter::Any);
+        std::vector<Pin> FindAvailablePins(PinFilter filter = PinFilter::Any);
+        std::vector<Bank> FindAvailableBanks(PinFilter filter = PinFilter::Any);
 
         [[nodiscard]] SusiStatus_t SetOut(Pin pin) noexcept;
         [[nodiscard]] SusiStatus_t SetIn(Pin pin) noexcept;
