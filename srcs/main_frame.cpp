@@ -84,10 +84,11 @@ void MainFrame::InitNav() {
     const wxTreeItemId root = nav_->AddRoot("ROOT");
     const wxTreeItemId GPIO = nav_->AppendItem(root, "GPIO");
     std::vector<SUSI::GPIO::Bank> banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
+    const auto label = std::to_string(banks.size());
+    Log(label);
     for (size_t bank = 0; bank < banks.size(); bank++) {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "Bank %d", banks[bank].index);
-        nav_->AppendItem(GPIO, buf);
+        const auto label = std::string("Bank ") + std::to_string(banks.at(bank).index);
+        nav_->AppendItem(GPIO, label);
     }
     nav_->AppendItem(root, "Fan");
     nav_->ExpandAll();
@@ -157,7 +158,7 @@ int MainFrame::FindPageIndex(wxWindow* page) const {
 
 void MainFrame::Log(const wxString& msg) {
     if (!log_) return;
-    log_->AppendText(msg + "\n");
+    log_->AppendText(msg);
     log_->ShowPosition(log_->GetLastPosition());
 }
 
