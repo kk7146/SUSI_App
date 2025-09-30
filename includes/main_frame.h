@@ -37,7 +37,7 @@ private:
 
     wxWindow* MakePlaceholderPage(const wxString& title, const wxString& desc);
     
-    void AddPage(const wxString& key, wxWindow* page);
+    void AddOrFocusPage(const wxString& key, wxWindow* page);
     int  FindPageIndex(wxWindow* page) const;
     void Log(const wxString& msg);
 
@@ -50,6 +50,7 @@ private:
     void OnTabClose(wxAuiNotebookEvent& e);
 
     void RegisterPage(const wxString& key, wxWindow* page);
+    void OnPageDestroyed(wxWindowDestroyEvent& e);
     void ShowOrCreatePage(const wxString& key, const wxString& tabLabel, std::function<wxWindow* (wxWindow*)> factory);
     bool ClosePageByKey(const wxString& key);
 

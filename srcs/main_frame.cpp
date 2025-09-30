@@ -11,8 +11,6 @@
 
 using namespace SUSI;
 
-static wxWindow* CreateGPIOPage(wxWindow* parent, GPIO::Bank bank) { return new GpioPage(parent, bank); }
-
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, "Control Hub", wxDefaultPosition, wxSize(1080, 700)) {
     SetMinSize(wxSize(900, 600));
@@ -62,7 +60,7 @@ void MainFrame::CreateLayout() {
     centerBook_ = new wxAuiNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
         wxAUI_NB_CLOSE_ON_ACTIVE_TAB | wxAUI_NB_TAB_MOVE | wxAUI_NB_TAB_SPLIT | wxAUI_NB_SCROLL_BUTTONS);
 
-    nav_ = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT);
+    nav_ = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_DEFAULT_STYLE);
 
     log_ = new wxTextCtrl(this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
 
@@ -126,7 +124,7 @@ wxWindow* MainFrame::MakePlaceholderPage(const wxString& title, const wxString& 
     return panel;
 }
 
-void MainFrame::AddPage(const wxString& key, wxWindow* page) {
+void MainFrame::AddOrFocusPage(const wxString& key, wxWindow* page) {
     auto it = openPages_.find(key);
     if (it != openPages_.end()) {
         const int idx = FindPageIndex(it->second);
@@ -189,7 +187,6 @@ void MainFrame::OnTabClose(wxAuiNotebookEvent& e) {
     const int idx = e.GetSelection();
     if (idx == wxNOT_FOUND) return;
     const wxString key = centerBook_->GetPageText(idx);
-    centerBook_->DeletePage(idx);
     Log(wxString::Format("[INFO] Closed page request: %s\n", key));
 }
 
@@ -197,10 +194,9 @@ void MainFrame::OnCloseCurrent(wxCommandEvent&) {
     const int sel = centerBook_->GetSelection();
     if (sel == wxNOT_FOUND) return;
     const wxString key = centerBook_->GetPageText(sel);
-    centerBook_->DeletePage(sel);
+    //centerBook_->DeletePage(sel);
     Log(wxString::Format("[INFO] Closed page: %s\n", key));
 }
-
 
 void MainFrame::OnToggleNav(wxCommandEvent&) {
     auto& pane = aui_.GetPane("nav");
@@ -216,11 +212,17 @@ void MainFrame::OnToggleLog(wxCommandEvent&) {
 
 void MainFrame::RegisterPage(const wxString& key, wxWindow* page) {
     openPages_[key] = page;
-    page->Bind(wxEVT_DESTROY, [this, key](wxWindowDestroyEvent&) {
-        openPages_.erase(key);
-        Log(wxString::Format("[INFO] Page destroyed: %s\n", key));
-        });
+    page->Bind(wxEVT_DESTROY, &MainFrame::OnPageDestroyed, this);
 }
+
+void MainFrame::OnPageDestroyed(wxWindowDestroyEvent& e) {
+    auto* page = static_cast<wxWindow*>(e.GetEventObject());
+    for (auto it = openPages_.begin(); it != openPages_.end(); ) {
+        if (it->second == page) it = openPages_.erase(it);
+        else ++it;
+    }
+}
+
 
 void MainFrame::ShowOrCreatePage(const wxString& key,
     const wxString& tabLabel,
