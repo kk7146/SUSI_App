@@ -167,8 +167,8 @@ void MainFrame::OnTreeActivate(wxTreeEvent& e) {
     }
 
     if (nd->kind == NodeData::Bank && nd->key == "GPIO") {
-        const wxString pageId = wxString::Format("GPIO:B%d", nd->bank.index);
-        const wxString tabTitle = wxString::Format("GPIO - Bank %d", nd->bank.index);
+        const wxString pageId = wxString::Format(" %d", nd->bank.index);
+        const wxString tabTitle = wxString::Format("Bank %d", nd->bank.index);
         auto it = pageFactories_.find("GPIO");
         if (it == pageFactories_.end() || !it->second)
             return;
