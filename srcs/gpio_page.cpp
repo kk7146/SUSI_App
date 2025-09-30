@@ -6,10 +6,11 @@ static inline wxString Hex32(uint32_t v) {
     return wxString::Format("0x%08X", v);
 }
 
-GpioPage::GpioPage(wxWindow* parent)
+GpioPage::GpioPage(wxWindow* parent, GPIO::Bank bank)
     : ControlPage(parent, "GPIO", "GPIO Control",
         "control page")
 {
+    bank_ = bank;
     BuildUI_();
 }
 

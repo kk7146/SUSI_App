@@ -12,8 +12,8 @@ C:\Program Files\Advantech\SUSI\SDK\SUSI4\include\Susi4.h(1,1): warning C4828: �
   (소스 파일 'srcs/main_frame.cpp'을(를) 컴파일하는 중)
   
   코드를 생성하고 있습니다.
-  85 of 1377 functions ( 6.2%) were compiled, the rest were copied from previous compilation.
-    68 functions were new in current compilation
-    84 functions had inline decision re-evaluated but remain unchanged
+  520 of 1326 functions (39.2%) were compiled, the rest were copied from previous compilation.
+    182 functions were new in current compilation
+    53 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   SUSI_App.vcxproj -> C:\Users\Kai.Son\source\repos\Serial_Port_Term\x64\Debug\SUSI_App.exe

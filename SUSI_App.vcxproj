@@ -80,6 +80,9 @@
     <ClCompile Include="srcs\gpio_page.cpp" />
     <ClCompile Include="srcs\main_frame.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="readme.md" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

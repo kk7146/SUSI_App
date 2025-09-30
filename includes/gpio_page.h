@@ -6,16 +6,17 @@
 #include <array>
 
 #include "control_page.h"
+#include "util.h"
+
+using namespace SUSI;
 
 class GpioPage : public ControlPage {
 public:
-    explicit GpioPage(wxWindow* parent);
+    explicit GpioPage(wxWindow* parent, GPIO::Bank bank);
 
-    void SetBank(int bank);
-    int  GetBank() const { return bank_; }
-    void SelectPin(int absolutePin);
+    GPIO::Bank  GetBank() const { return bank_; }
 private:
-    int bank_ = 0;
+    GPIO::Bank bank_;
 
     wxStaticText* lblBank_ = nullptr;
     wxCheckBox* chkAuto_ = nullptr;

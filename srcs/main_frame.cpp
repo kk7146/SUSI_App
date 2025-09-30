@@ -9,7 +9,12 @@
 #include "gpio_page.h"
 #include "util.h"
 
-static wxWindow* CreateGPIOPage(wxWindow* parent) { return new GpioPage(parent); }
+using namespace SUSI;
+
+static wxWindow* CreateGPIOPage_Factory(wxWindow* parent, const void* args) {
+    auto* bank = static_cast<const SUSI::GPIO::Bank*>(args);
+    return new GpioPage(parent, *bank);
+}
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, "Control Hub", wxDefaultPosition, wxSize(1080, 700)) {
@@ -23,7 +28,7 @@ MainFrame::MainFrame()
 
     BindEvent();
 
-    RegistPage();
+    RegisterPageFactory_("GPIO", &CreateGPIOPage_Factory);
 
     aui_.Update();
 }
@@ -82,13 +87,14 @@ void MainFrame::CreateLayout() {
 
 void MainFrame::InitNav() {
     const wxTreeItemId root = nav_->AddRoot("ROOT");
-    const wxTreeItemId GPIO = nav_->AppendItem(root, "GPIO");
-    std::vector<SUSI::GPIO::Bank> banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
-    for (size_t bank = 0; bank < banks.size(); bank++) {
-        const auto label = std::string("Bank ") + std::to_string(banks.at(bank).index);
-        nav_->AppendItem(GPIO, label);
+    const wxTreeItemId gpio = nav_->AppendItem(root, "GPIO",
+        -1, -1, new NodeData(NodeData::Category, "GPIO"));
+
+    auto banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
+    for (const auto& b : banks) {
+        const wxString label = wxString::Format("Bank %d", b.index);
+        nav_->AppendItem(gpio, label, -1, -1, new NodeData(NodeData::Bank, "GPIO", b));
     }
-    nav_->AppendItem(root, "Fan");
     nav_->ExpandAll();
 }
 
@@ -103,10 +109,6 @@ void MainFrame::BindEvent() {
         nav_->Bind(wxEVT_TREE_ITEM_ACTIVATED,
             &MainFrame::OnTreeActivate, this);
     }
-}
-
-void MainFrame::RegistPage() {
-    RegisterPageFactory("GPIO", &CreateGPIOPage);
 }
 
 wxWindow* MainFrame::MakePlaceholderPage(const wxString& title, const wxString& desc) {
@@ -127,23 +129,15 @@ wxWindow* MainFrame::MakePlaceholderPage(const wxString& title, const wxString& 
     return panel;
 }
 
-void MainFrame::AddPage(const wxString& key, wxWindow* page) {
-    auto it = openPages_.find(key);
+void MainFrame::AddOrFocusPageId_(const wxString& pageId, const wxString& tabTitle, wxWindow* page) {
+    auto it = openPages_.find(pageId);
     if (it != openPages_.end()) {
-        const int idx = FindPageIndex(it->second);
-        if (idx >= 0)
-            centerBook_->SetSelection(idx);
-        if (page && page != it->second)
-            page->Destroy();
+        for (size_t i = 0; i < centerBook_->GetPageCount(); ++i)
+            if (centerBook_->GetPage(i) == it->second) { centerBook_->SetSelection(i); return; }
         return;
     }
-
-    if (!page)
-        page = MakePlaceholderPage(key, key + " control page");
-    centerBook_->AddPage(page, key, true);
-    openPages_.emplace(key, page);
-
-    Log(wxString::Format("[INFO] Opened page: %s\n", key));
+    centerBook_->AddPage(page, tabTitle, true);
+    openPages_.emplace(pageId, page);
 }
 
 int MainFrame::FindPageIndex(wxWindow* page) const {
@@ -160,38 +154,37 @@ void MainFrame::Log(const wxString& msg) {
     log_->ShowPosition(log_->GetLastPosition());
 }
 
-void MainFrame::RegisterPageFactory(const wxString& key, PageFactoryFn fn) {
-    pageFactories_[key] = fn;
-}
-
-void MainFrame::OpenByKey(const wxString& key) {
-    auto it = pageFactories_.find(key);
-    if (it == pageFactories_.end() || !it->second) {
-        Log(wxString::Format("[WARN] Unknown controller key: %s\n", key));
-        return;
-    }
-    wxWindow* page = it->second(centerBook_);
-    AddPage(key, page);
-}
-
 void MainFrame::OnQuit(wxCommandEvent&) { Close(true); }
 
 void MainFrame::OnAbout(wxCommandEvent&) {}
 
 void MainFrame::OnTreeActivate(wxTreeEvent& e) {
-    const wxString text = nav_->GetItemText(e.GetItem());
-    OpenByKey(text);
+    auto* nd = dynamic_cast<NodeData*>(nav_->GetItemData(e.GetItem()));
+    if (!nd) return;
+
+    if (nd->kind == NodeData::Category && nd->key == "GPIO") {
+        return;
+    }
+
+    if (nd->kind == NodeData::Bank && nd->key == "GPIO") {
+        const wxString pageId = wxString::Format("GPIO:B%d", nd->bank.index);
+        const wxString tabTitle = wxString::Format("GPIO - Bank %d", nd->bank.index);
+        auto it = pageFactories_.find("GPIO");
+        if (it == pageFactories_.end() || !it->second)
+            return;
+        wxWindow* page = it->second(centerBook_, &nd->bank);
+        AddOrFocusPageId_(pageId, tabTitle, page);
+        Log(wxString::Format("[INFO] Opened page: %s\n", pageId));
+    }
 }
 
 void MainFrame::OnTabClose(wxAuiNotebookEvent& e) {
     int idx = e.GetSelection();
-    if (idx == wxNOT_FOUND)
-        return;
-
-    const wxString key = centerBook_->GetPageText(idx);
-    openPages_.erase(key);
-
-    Log(wxString::Format("[INFO] Closed page: %s\n", key));
+    if (idx != wxNOT_FOUND) {
+        const wxString pageId = centerBook_->GetPageText(idx);
+        openPages_.erase(pageId);
+        Log(wxString::Format("[INFO] Closed page: %s\n", pageId));
+    }
 }
 
 

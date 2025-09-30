@@ -9,3 +9,10 @@ visual studio x64 native tools command prompt에서
 cd C:\wxWidgets-3.2.8\build\msw
 nmake /f makefile.vc BUILD=release SHARED=0 MONOLITHIC=0 TARGET_CPU=amd64
 ```
+
+# 테스트 용 호스트 설정
+```bash
+git fetch origin
+git reset --hard origin/main
+git clean -fdx
+```
