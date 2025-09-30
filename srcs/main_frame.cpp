@@ -84,8 +84,6 @@ void MainFrame::InitNav() {
     const wxTreeItemId root = nav_->AddRoot("ROOT");
     const wxTreeItemId GPIO = nav_->AppendItem(root, "GPIO");
     std::vector<SUSI::GPIO::Bank> banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
-    const auto label = std::to_string(banks.size());
-    Log(label);
     for (size_t bank = 0; bank < banks.size(); bank++) {
         const auto label = std::string("Bank ") + std::to_string(banks.at(bank).index);
         nav_->AppendItem(GPIO, label);
