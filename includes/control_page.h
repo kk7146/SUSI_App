@@ -9,15 +9,19 @@ public:
         const wxString& key,
         const wxString& title,
         const wxString& desc = "");
-    virtual ~ControlPage() = default;
+    ~ControlPage() override = default;
 
     const wxString& Key() const { return key_; }
-protected:
-    wxPanel* content_ = nullptr;
-    wxBoxSizer* contentSizer_ = nullptr;
+
+    wxBoxSizer* GetContentSizer() const { return contentSizer_; }
+    wxWindow* GetContentWindow() const { return content_; }
 
 private:
-    wxString key_;
+    wxString   key_;
+protected:
+    wxWindow* content_ = nullptr;
+    wxBoxSizer* contentSizer_ = nullptr;
+
 };
 
 #endif

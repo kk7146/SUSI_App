@@ -1,25 +1,44 @@
-﻿#include <wx/wx.h>
+﻿// control_page.cpp
 #include "control_page.h"
 
 ControlPage::ControlPage(wxWindow* parent,
     const wxString& key,
     const wxString& title,
     const wxString& desc)
-    : wxPanel(parent), key_(key) {
+    : wxPanel(parent),
+    key_(key)
+{
+    auto* root = new wxBoxSizer(wxVERTICAL);
 
-    auto* vbox = new wxBoxSizer(wxVERTICAL);
-    auto* t = new wxStaticText(this, wxID_ANY, title);
-    t->SetFont(t->GetFont().Bold().Larger());
-    vbox->AddSpacer(10);
-    vbox->Add(t, 0, wxLEFT | wxRIGHT, 12);
-    if (!desc.IsEmpty()) {
-        vbox->AddSpacer(4);
-        vbox->Add(new wxStaticText(this, wxID_ANY, desc), 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    const bool hasHeader = !title.IsEmpty() || !desc.IsEmpty();
+    if (hasHeader) {
+        auto* header = new wxBoxSizer(wxVERTICAL);
+
+        if (!title.IsEmpty()) {
+            auto* t = new wxStaticText(this, wxID_ANY, title);
+            t->SetFont(t->GetFont().Bold().Larger());
+            header->Add(t, 0);
+        }
+        if (!desc.IsEmpty()) {
+            header->AddSpacer(2);
+            header->Add(new wxStaticText(this, wxID_ANY, desc), 0);
+        }
+
+        root->Add(header, 0, wxALL, 8);
+
+        auto* body = new wxPanel(this);
+        auto* bodySizer = new wxBoxSizer(wxVERTICAL);
+        body->SetSizer(bodySizer);
+
+        root->Add(body, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
+
+        content_ = body;
+        contentSizer_ = bodySizer;
     }
-    content_ = new wxPanel(this);
-    contentSizer_ = new wxBoxSizer(wxVERTICAL);
-    content_->SetSizer(contentSizer_);
-    vbox->Add(content_, 1, wxEXPAND | wxALL, 8);
+    else {
+        content_ = this;
+        contentSizer_ = root;
+    }
 
-    SetSizer(vbox);
+    SetSizer(root);
 }
