@@ -86,7 +86,7 @@ void MainFrame::InitNav() {
     const wxTreeItemId root = nav_->AddRoot("ROOT");
     const wxTreeItemId GPIO = nav_->AppendItem(root, "GPIO");
 
-    auto banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
+    auto banks = GPIO::FindAvailableBanks(GPIO::PinFilter::Any);
     for (auto& b : banks) {
         auto label = wxString::Format("Bank %d", b.index);
         auto id = nav_->AppendItem(GPIO, label);
@@ -126,25 +126,6 @@ wxWindow* MainFrame::MakePlaceholderPage(const wxString& title, const wxString& 
 
     panel->SetSizer(vbox);
     return panel;
-}
-
-void MainFrame::AddOrFocusPage(const wxString& key, wxWindow* page) {
-    auto it = openPages_.find(key);
-    if (it != openPages_.end()) {
-        const int idx = FindPageIndex(it->second);
-        if (idx >= 0)
-            centerBook_->SetSelection(idx);
-        if (page && page != it->second)
-            page->Destroy();
-        return;
-    }
-
-    if (!page)
-        page = MakePlaceholderPage(key, key + " control page");
-    centerBook_->AddPage(page, key, true);
-    openPages_.emplace(key, page);
-
-    Log(wxString::Format("[INFO] Opened page: %s\n", key));
 }
 
 int MainFrame::FindPageIndex(wxWindow* page) const {

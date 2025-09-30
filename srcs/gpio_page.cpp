@@ -60,7 +60,6 @@ void GpioPage::BuildUI()
             wxDV_ROW_LINES | wxDV_VERT_RULES | wxDV_MULTIPLE);
 
         grid_->AppendTextColumn("Bit", wxDATAVIEW_CELL_INERT, 60, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
-        grid_->AppendTextColumn("Abs", wxDATAVIEW_CELL_INERT, 90, wxALIGN_LEFT, wxDATAVIEW_COL_SORTABLE);
         grid_->AppendTextColumn("Direction", wxDATAVIEW_CELL_INERT, 110, wxALIGN_LEFT);
         grid_->AppendTextColumn("Level", wxDATAVIEW_CELL_INERT, 80, wxALIGN_LEFT);
 

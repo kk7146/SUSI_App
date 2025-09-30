@@ -1,5 +1,4 @@
-﻿// control_page.cpp
-#include "control_page.h"
+﻿#include "control_page.h"
 
 ControlPage::ControlPage(wxWindow* parent,
     const wxString& key,

@@ -37,7 +37,6 @@ private:
 
     wxWindow* MakePlaceholderPage(const wxString& title, const wxString& desc);
     
-    void AddOrFocusPage(const wxString& key, wxWindow* page);
     int  FindPageIndex(wxWindow* page) const;
     void Log(const wxString& msg);
 

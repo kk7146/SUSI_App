@@ -17,8 +17,8 @@ public:
     GpioPage(wxWindow* parent,
         Bank bank,
         const wxString& key = "gpio.bank",
-        const wxString& title = "GPIO Bank",
-        const wxString& desc = "Control pin direction/level for the specified bank.");
+        const wxString& title = "",
+        const wxString& desc = "");
     ~GpioPage() override = default;
 
     void SetBank(Bank bank);

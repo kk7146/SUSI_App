@@ -8,7 +8,7 @@ public:
     ControlPage(wxWindow* parent,
         const wxString& key,
         const wxString& title,
-        const wxString& desc = "");
+        const wxString& desc);
     ~ControlPage() override = default;
 
     const wxString& Key() const { return key_; }
