@@ -27,6 +27,10 @@ MainFrame::MainFrame()
 }
 
 MainFrame::~MainFrame() {
+    for (auto& kv : openPages_) {
+        kv.second->Unbind(wxEVT_DESTROY, &MainFrame::OnPageDestroyed, this);
+    }
+    openPages_.clear();
     aui_.UnInit();
 }
 
@@ -217,12 +221,13 @@ void MainFrame::RegisterPage(const wxString& key, wxWindow* page) {
 
 void MainFrame::OnPageDestroyed(wxWindowDestroyEvent& e) {
     auto* page = static_cast<wxWindow*>(e.GetEventObject());
-    for (auto it = openPages_.begin(); it != openPages_.end(); ) {
-        if (it->second == page) it = openPages_.erase(it);
+    for (auto it = openPages_.begin();
+        it != openPages_.end(); ) {
+        if (it->second == page)
+            it = openPages_.erase(it);
         else ++it;
     }
 }
-
 
 void MainFrame::ShowOrCreatePage(const wxString& key,
     const wxString& tabLabel,
