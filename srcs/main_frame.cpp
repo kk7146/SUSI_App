@@ -11,10 +11,7 @@
 
 using namespace SUSI;
 
-static wxWindow* CreateGPIOPage_Factory(wxWindow* parent, const void* args) {
-    auto* bank = static_cast<const SUSI::GPIO::Bank*>(args);
-    return new GpioPage(parent, *bank);
-}
+static wxWindow* CreateGPIOPage(wxWindow* parent, GPIO::Bank bank) { return new GpioPage(parent, bank); }
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, "Control Hub", wxDefaultPosition, wxSize(1080, 700)) {
@@ -27,8 +24,6 @@ MainFrame::MainFrame()
     InitNav();
 
     BindEvent();
-
-    RegisterPageFactory_("GPIO", &CreateGPIOPage_Factory);
 
     aui_.Update();
 }
@@ -87,15 +82,17 @@ void MainFrame::CreateLayout() {
 
 void MainFrame::InitNav() {
     const wxTreeItemId root = nav_->AddRoot("ROOT");
-    const wxTreeItemId gpio = nav_->AppendItem(root, "GPIO",
-        -1, -1, new NodeData(NodeData::Category, "GPIO"));
+    const wxTreeItemId GPIO = nav_->AppendItem(root, "GPIO");
 
     auto banks = SUSI::GPIO::FindAvailableBanks(SUSI::GPIO::PinFilter::Any);
-    for (const auto& b : banks) {
-        const wxString label = wxString::Format("Bank %d", b.index);
-        nav_->AppendItem(gpio, label, -1, -1, new NodeData(NodeData::Bank, "GPIO", b));
+    for (auto& b : banks) {
+        auto label = wxString::Format("Bank %d", b.index);
+        auto id = nav_->AppendItem(GPIO, label);
+        nav_->SetItemData(id, new NodeData(NodeData::GPIO_BANK, b));
     }
-    nav_->ExpandAll();
+
+    auto fanId = nav_->AppendItem(root, "Fan");
+    nav_->SetItemData(fanId, new NodeData(NodeData::FAN_ROOT));
 }
 
 void MainFrame::BindEvent() {
@@ -129,15 +126,23 @@ wxWindow* MainFrame::MakePlaceholderPage(const wxString& title, const wxString& 
     return panel;
 }
 
-void MainFrame::AddOrFocusPageId_(const wxString& pageId, const wxString& tabTitle, wxWindow* page) {
-    auto it = openPages_.find(pageId);
+void MainFrame::AddPage(const wxString& key, wxWindow* page) {
+    auto it = openPages_.find(key);
     if (it != openPages_.end()) {
-        for (size_t i = 0; i < centerBook_->GetPageCount(); ++i)
-            if (centerBook_->GetPage(i) == it->second) { centerBook_->SetSelection(i); return; }
+        const int idx = FindPageIndex(it->second);
+        if (idx >= 0)
+            centerBook_->SetSelection(idx);
+        if (page && page != it->second)
+            page->Destroy();
         return;
     }
-    centerBook_->AddPage(page, tabTitle, true);
-    openPages_.emplace(pageId, page);
+
+    if (!page)
+        page = MakePlaceholderPage(key, key + " control page");
+    centerBook_->AddPage(page, key, true);
+    openPages_.emplace(key, page);
+
+    Log(wxString::Format("[INFO] Opened page: %s\n", key));
 }
 
 int MainFrame::FindPageIndex(wxWindow* page) const {
@@ -162,45 +167,40 @@ void MainFrame::OnTreeActivate(wxTreeEvent& e) {
     auto* nd = dynamic_cast<NodeData*>(nav_->GetItemData(e.GetItem()));
     if (!nd) return;
 
-    if (nd->kind == NodeData::Category && nd->key == "GPIO") {
-        return;
+    switch (nd->type) {
+    case NodeData::GPIO_BANK: {
+        const wxString key = wxString::Format("gpio:bank:%d", nd->bank.index);
+        const wxString tab = wxString::Format("GPIO %d", nd->bank.index);
+        ShowOrCreatePage(key, tab, [&, bank = nd->bank](wxWindow* parent) {
+            return new GpioPage(parent, bank);
+            });
+        break;
     }
-
-    if (nd->kind == NodeData::Bank && nd->key == "GPIO") {
-        const wxString pageId = wxString::Format(" %d", nd->bank.index);
-        const wxString tabTitle = wxString::Format("Bank %d", nd->bank.index);
-        auto it = pageFactories_.find("GPIO");
-        if (it == pageFactories_.end() || !it->second)
-            return;
-        wxWindow* page = it->second(centerBook_, &nd->bank);
-        AddOrFocusPageId_(pageId, tabTitle, page);
-        Log(wxString::Format("[INFO] Opened page: %s\n", pageId));
+    case NodeData::FAN_ROOT: {
+        ShowOrCreatePage("fan", "Fan", [&](wxWindow* parent) {
+            return MakePlaceholderPage("Fan", "Fan control page");
+            });
+        break;
+    }
     }
 }
 
 void MainFrame::OnTabClose(wxAuiNotebookEvent& e) {
-    int idx = e.GetSelection();
-    if (idx != wxNOT_FOUND) {
-        const wxString pageId = centerBook_->GetPageText(idx);
-        openPages_.erase(pageId);
-        Log(wxString::Format("[INFO] Closed page: %s\n", pageId));
-    }
+    const int idx = e.GetSelection();
+    if (idx == wxNOT_FOUND) return;
+    const wxString key = centerBook_->GetPageText(idx);
+    centerBook_->DeletePage(idx);
+    Log(wxString::Format("[INFO] Closed page request: %s\n", key));
 }
-
 
 void MainFrame::OnCloseCurrent(wxCommandEvent&) {
     const int sel = centerBook_->GetSelection();
-    if (sel == wxNOT_FOUND)
-        return;
-
+    if (sel == wxNOT_FOUND) return;
     const wxString key = centerBook_->GetPageText(sel);
-    auto it = openPages_.find(key);
-    if (it != openPages_.end())
-        openPages_.erase(it);
-
     centerBook_->DeletePage(sel);
     Log(wxString::Format("[INFO] Closed page: %s\n", key));
 }
+
 
 void MainFrame::OnToggleNav(wxCommandEvent&) {
     auto& pane = aui_.GetPane("nav");
@@ -213,5 +213,37 @@ void MainFrame::OnToggleLog(wxCommandEvent&) {
     pane.Show(!pane.IsShown());
     aui_.Update();
 }
+
+void MainFrame::RegisterPage(const wxString& key, wxWindow* page) {
+    openPages_[key] = page;
+    page->Bind(wxEVT_DESTROY, [this, key](wxWindowDestroyEvent&) {
+        openPages_.erase(key);
+        Log(wxString::Format("[INFO] Page destroyed: %s\n", key));
+        });
+}
+
+void MainFrame::ShowOrCreatePage(const wxString& key,
+    const wxString& tabLabel,
+    std::function<wxWindow* (wxWindow*)> factory) {
+    if (auto it = openPages_.find(key); it != openPages_.end()) {
+        const int idx = FindPageIndex(it->second);
+        if (idx >= 0) centerBook_->SetSelection(idx);
+        return;
+    }
+    wxWindow* page = factory(centerBook_);
+    centerBook_->AddPage(page, tabLabel, true);
+    RegisterPage(key, page);
+    Log(wxString::Format("[INFO] Opened page: %s\n", key));
+}
+
+bool MainFrame::ClosePageByKey(const wxString& key) {
+    auto it = openPages_.find(key);
+    if (it == openPages_.end()) return false;
+    const int idx = FindPageIndex(it->second);
+    if (idx < 0) return false;
+    const bool ok = centerBook_->DeletePage(idx);
+    return ok;
+}
+
 
 wxDEFINE_EVENT(EVT_MF_NEW_FRAME, wxCommandEvent);

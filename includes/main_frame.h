@@ -6,19 +6,14 @@
 #include <wx/treectrl.h>
 #include <unordered_map>
 
-#include "util.h"
-
-using namespace SUSI;
+#include <util.h>
 
 wxDECLARE_EVENT(EVT_MF_NEW_FRAME, wxCommandEvent);
 
 struct NodeData : public wxTreeItemData {
-    enum Kind { Category, Bank } kind;
-    wxString key;
-    GPIO::Bank bank;
-    NodeData(Kind k, wxString kk, const GPIO::Bank& b = {})
-        : kind(k), key(std::move(kk)), bank(b) {
-    }
+    enum Type { GPIO_BANK, FAN_ROOT } type;
+    SUSI::GPIO::Bank bank{};
+    explicit NodeData(Type t, const SUSI::GPIO::Bank& b = {}) : type(t), bank(b) {}
 };
 
 class MainFrame : public wxFrame {
@@ -33,9 +28,7 @@ private:
     wxTreeCtrl* nav_ = nullptr;
     wxTextCtrl* log_ = nullptr;
 
-    using PageFactoryFn = wxWindow * (*)(wxWindow* parent, const void* args);
     std::unordered_map<wxString, wxWindow*> openPages_;
-    std::unordered_map<wxString, PageFactoryFn> pageFactories_;
 
     void CreateMenuBar();
     void CreateLayout();
@@ -44,7 +37,7 @@ private:
 
     wxWindow* MakePlaceholderPage(const wxString& title, const wxString& desc);
     
-    void AddOrFocusPage(const wxString& key, wxWindow* page);
+    void AddPage(const wxString& key, wxWindow* page);
     int  FindPageIndex(wxWindow* page) const;
     void Log(const wxString& msg);
 
@@ -56,10 +49,9 @@ private:
     void OnToggleLog(wxCommandEvent&);
     void OnTabClose(wxAuiNotebookEvent& e);
 
-    void RegisterPageFactory_(const wxString& key, PageFactoryFn fn) {
-        pageFactories_[key] = fn;
-    }
-    void AddOrFocusPageId_(const wxString& pageId, const wxString& tabTitle, wxWindow* page);
+    void RegisterPage(const wxString& key, wxWindow* page);
+    void ShowOrCreatePage(const wxString& key, const wxString& tabLabel, std::function<wxWindow* (wxWindow*)> factory);
+    bool ClosePageByKey(const wxString& key);
 
     void OpenGPIO();
     void OpenFan();
